@@ -1,0 +1,13 @@
+{
+	// tell podman to map the container user to the host's
+	"runArgs": [
+		"--userns=keep-id"
+	],
+	// vscode requires we map the home directory manually
+	"containerEnv": {
+		"HOME": "${localEnv:HOME}"
+	},
+	// specify the remote user as the current;
+	// note: requires containerEnv.HOME to function correctly
+	"remoteUser": "${localEnv:USER}"
+}

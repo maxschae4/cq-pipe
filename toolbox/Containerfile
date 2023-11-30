@@ -1,0 +1,67 @@
+# Sourced from the toolbox ubuntu base containerfile:
+# https://github.com/containers/toolbox/blob/main/images/ubuntu/22.04/Containerfile
+FROM quay.io/toolbx/ubuntu-toolbox:22.04
+
+LABEL \
+    maintainer="Max Schaefer <frederick.schaefer@gmail.com>" \
+    name="cq-pipe development container" \
+    summary="core tools for the cq-pipe project" \
+    usage="core tools for the cq-pipe project" \
+    version="latest"
+
+# Suppress debconf warning messages when installing packages
+ARG DEBIAN_FRONTEND=noninteractive
+
+# use bash with "-o pipefail" to prevent continuing if piped commands fail;
+# cf. https://github.com/hadolint/hadolint/wiki/DL4006
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Use the apt_preferences file to pin versions for installed packages
+# This allows us to specify versions per installed package
+COPY ./apt_preferences.conf /etc/apt/preferences.d/cq-pipe
+
+# Install packages; alphabetical sort for sanity
+RUN apt-get --quiet update \
+    && apt-get --quiet --assume-yes install --no-install-recommends \
+    bat \
+    fzf \
+    jq \
+    python3.10 \
+    python3.10-venv \
+    python3-pip \
+    python3-poetry \
+    ripgrep \
+    shellcheck \
+    tig \
+    tmux \
+    vim \
+    # cleanup the list cache to reduce image size
+    # cf. https://github.com/hadolint/hadolint/wiki/DL3009
+    && rm -rf /var/lib/apt/lists/*
+
+# Pin versions for binary tools as build args to simplify update reviews
+ARG XC_RELEASE_TAG=0.5.0
+ARG MCFLY_RELEASE_TAG=v0.8.1
+ARG STARSHIP_RELEASE_TAG=v1.16.0
+
+WORKDIR /tmp
+RUN \
+    # BINARY installs; alphabetical sort for sanity
+    # mcfly
+    wget --quiet --output-document=mcfly.tar.gz "https://github.com/cantino/mcfly/releases/download/${MCFLY_RELEASE_TAG}/mcfly-${MCFLY_RELEASE_TAG}-x86_64-unknown-linux-musl.tar.gz" \
+    && tar -xzof mcfly.tar.gz --directory /usr/local/bin \
+    # starship
+    && wget --quiet --output-document=starship.tar.gz "https://github.com/starship/starship/releases/download/${STARSHIP_RELEASE_TAG}/starship-x86_64-unknown-linux-musl.tar.gz" \
+    && tar -xzof starship.tar.gz --directory /usr/local/bin \
+    # xc
+    && wget --quiet --output-document=xc.tar.gz "https://github.com/joerdav/xc/releases/download/v${XC_RELEASE_TAG}/xc_${XC_RELEASE_TAG}_linux_amd64.tar.gz" \
+    && tar -xzof xc.tar.gz --directory /usr/local/bin \
+    # cleanup /tmp
+    && rm -rf /tmp/* \
+    ;
+
+# Extra fixups to align with existing expectations (map Ubuntu to Arch, Fedora, etc)
+RUN \
+    # Ubuntu installs `bat` as `batcat`
+    ln --symbolic /usr/bin/batcat /usr/bin/bat \
+    ;
