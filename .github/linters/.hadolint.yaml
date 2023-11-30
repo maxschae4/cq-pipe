@@ -1,0 +1,6 @@
+---
+ignored:
+  # ignore the warning about "latest" tags since the container isn't published
+  - DL3007
+  # ignore the apt version pinning rule since we use an apt preferences file
+  - DL3008
