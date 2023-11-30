@@ -16,6 +16,10 @@ From the `toolbox` directory, run `make toolbox` and `make enter` on the host to
 n.b. This will create a directory and file on your host for seemless integration with VSCode (my preferred editor) at:
 `${HOME}/.config/Code/User/globalStorage/ms-vscode-remote.remote-containers/imageConfigs`
 
+### First-time setup
+
+From within the toolbox, run `xc init` to configure the pre-commit hook (see the task definition below!).
+
 ## Tasks
 
 After digging in and building a couple Makefiles, I was reminded of a few things:
@@ -60,4 +64,12 @@ flatpak-spawn --host podman run --rm \
     --env RUN_LOCAL=true --env USE_FIND_ALGORITHM=true \
     --volume "${GIT_DIR}":/tmp/lint \
     ghcr.io/super-linter/super-linter:slim-latest
+```
+
+### init
+
+Initialize the repository with a shared git hook to enforce linting prior to commit.
+
+```sh
+git config core.hooksPath .githooks
 ```
