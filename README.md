@@ -62,6 +62,8 @@ Give it a try from inside the toolbox container with `xc lint`.
 export GIT_DIR=$(git rev-parse --show-toplevel)
 flatpak-spawn --host podman run --rm \
     --env RUN_LOCAL=true --env USE_FIND_ALGORITHM=true \
+    --env FILTER_REGEX_EXCLUDE=".*mypy_cache/.*" \
+    --env VALIDATE_ALL_CODEBASE=false \
     --volume "${GIT_DIR}":/tmp/lint \
     ghcr.io/super-linter/super-linter:slim-latest
 ```

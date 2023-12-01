@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "cq-pipe"
+version = "0.1.0"
+description = ""
+authors = ["Max Schaefer <frederick.schaefer@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+celery = "^5.3.6"
+requests = "^2.31.0"
+pydantic = "^2.5.2"
+pydantic-mongo = "^2.0.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+black = "^23.11.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
