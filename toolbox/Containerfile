@@ -24,6 +24,7 @@ COPY ./apt_preferences.conf /etc/apt/preferences.d/cq-pipe
 RUN apt-get --quiet update \
     && apt-get --quiet --assume-yes install --no-install-recommends \
     bat \
+    direnv \
     fzf \
     jq \
     python3.10 \
