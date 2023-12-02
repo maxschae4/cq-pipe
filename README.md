@@ -73,5 +73,23 @@ flatpak-spawn --host podman run --rm \
 Initialize the repository with a shared git hook to enforce linting prior to commit.
 
 ```sh
+# configure the shared githook path
 git config core.hooksPath .githooks
+# write a default env file
+tee .env <<EOF
+# python app requirements, change these
+API_TOKEN="abcd1234"
+API_URL="https://example.com/api"
+CROWDSTRIKE_ENDPOINT="crowdstrike/hosts/get"
+QUALYS_ENDPOINT="qualys/hosts/get"
+
+# use the service defaults, change these
+RABBITMQ_DEFUALT_USER="guest"
+RABBITMQ_DEFAULT_PASS="guest"
+MONGO_INITDB_ROOT_USERNAME="root"
+MONGO_INITDB_ROOT_PASSWORD="example"
+ME_CONFIG_MONGODB_ADMINUSERNAME="root"
+ME_CONFIG_MONGODB_ADMINPASSWORD="example"
+ME_CONFIG_MONGODB_URL="mongodb://root:example@mongo:27017/"
+EOF
 ```
