@@ -1,7 +1,8 @@
 import os
 
 from cq_pipe.celery import app
-from cq_pipe.fetch import fetch_hosts
+from cq_pipe.extract import fetch_hosts
+from cq_pipe.transform import Host
 
 # This isn't the best place for loading, we should leverage the celery worker_init signal
 # and we should probably create a config object instead of loading globals
@@ -47,24 +48,31 @@ def extract_qualys_hosts() -> None:
 
 
 @app.task
-def transform_crowdstrike_host(host) -> dict:
+def transform_crowdstrike_host(host: dict) -> dict:
     """
-    Stub entry for transforming the crowdstrike host into our defined model
+    Transform the crowdstrike host into our defined model
+
+    While these tasks may seem superfluous, this allows a separation of concerns within the pipeline.
     """
-    return host
+    modeled_host = Host.from_crowdstrike(host)
+    # model dump enables dropping the unset values
+    return modeled_host.model_dump(exclude_unset=True)
 
 
 @app.task
-def transform_qualys_host(host):
+def transform_qualys_host(host: dict) -> dict:
     """
-    Stub entry for transforming the qualys host into our defined model
+    Transform the qualys host into our defined model
     """
-    return host
+    modeled_host = Host.from_qualys(host)
+    # model dump enables dropping the unset values
+    return modeled_host.model_dump(exclude_unset=True)
 
 
 @app.task
-def load_host(host):
+def load_host(host: dict) -> dict:
     """
     Stub entry for loading hosts into mongo
     """
-    pass
+    print(type(host), host)
+    return host

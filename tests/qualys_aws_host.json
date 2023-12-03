@@ -1,0 +1,17 @@
+{
+    "_id": 305003660,
+    "cloudProvider": "AWS",
+    "id": 305003660,
+    "sourceInfo": {
+        "list": [
+            {
+                "Ec2AssetSourceSimple": {
+                    "instanceId": "i-0f74daf3d7225083a"
+                }
+            },
+            {
+                "AssetSource": {}
+            }
+        ]
+    }
+}

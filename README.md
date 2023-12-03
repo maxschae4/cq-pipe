@@ -61,7 +61,7 @@ Give it a try from inside the toolbox container with `xc lint`.
 ```sh
 export GIT_DIR=$(git rev-parse --show-toplevel)
 flatpak-spawn --host podman run --rm \
-    --env RUN_LOCAL=true --env USE_FIND_ALGORITHM=true \
+    --env RUN_LOCAL=true \
     --env FILTER_REGEX_EXCLUDE=".*mypy_cache/.*" \
     --env VALIDATE_ALL_CODEBASE=false \
     --volume "${GIT_DIR}":/tmp/lint \
@@ -73,6 +73,7 @@ flatpak-spawn --host podman run --rm \
 Initialize the repository with a shared git hook to enforce linting prior to commit.
 
 ```sh
+cd $(git rev-parse --show-toplevel)
 # configure the shared githook path
 git config core.hooksPath .githooks
 # write a default env file
@@ -92,4 +93,45 @@ ME_CONFIG_MONGODB_ADMINUSERNAME="root"
 ME_CONFIG_MONGODB_ADMINPASSWORD="example"
 ME_CONFIG_MONGODB_URL="mongodb://root:example@mongo:27017/"
 EOF
+# setup the virtual environment
+poetry install --dev
+```
+
+### service-start
+
+starts underlying containerized services
+
+```sh
+cd $(git rev-parse --show-toplevel)
+podman compose up --detach
+```
+
+### start
+
+starts a celery worker locally
+
+requires: service-start
+
+```sh
+# ensure we've loaded the environment variables
+cd $(git rev-parse --show-toplevel)
+poetry run celery --app "cq_pipe" worker --loglevel INFO
+```
+
+### ipy
+
+starts interactive python in the virtual environment
+
+```sh
+cd $(git rev-parse --show-toplevel)
+poetry run python3
+```
+
+### test
+
+executes python unittests
+
+```sh
+cd $(git rev-parse --show-toplevel)
+poetry run python3 -m unittest
 ```
