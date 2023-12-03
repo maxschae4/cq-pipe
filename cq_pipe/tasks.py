@@ -1,7 +1,10 @@
 import os
 
+from pymongo import MongoClient
+
 from cq_pipe.celery import app
 from cq_pipe.extract import fetch_hosts
+from cq_pipe.load import load
 from cq_pipe.transform import Host
 
 # This isn't the best place for loading, we should leverage the celery worker_init signal
@@ -9,6 +12,7 @@ from cq_pipe.transform import Host
 API_TOKEN = os.getenv("API_TOKEN", "")
 API_URL = os.getenv("API_URL", "")
 CROWDSTRIKE_ENDPOINT = os.getenv("CROWDSTRIKE_ENDPOINT", "")
+MONGO_DB_URL = os.getenv("MONGO_DB_URL")
 QUALYS_ENDPOINT = os.getenv("QUALYS_ENDPOINT", "")
 
 
@@ -69,10 +73,18 @@ def transform_qualys_host(host: dict) -> dict:
     return modeled_host.model_dump(exclude_unset=True)
 
 
-@app.task
+@app.task()
 def load_host(host: dict) -> dict:
     """
-    Stub entry for loading hosts into mongo
+    load the provided object into the database
     """
-    print(type(host), host)
+    # the db client should really live with the worker executing it by leveraging celery signals.
+    # that would allow starting/stopping the connection on worker init/close
+    db_client = MongoClient(MONGO_DB_URL)
+    db = db_client.hosts
+    hosts_collection = db.hosts
+
+    with db_client.start_session() as session:
+        load(host, hosts_collection, session)
+
     return host
