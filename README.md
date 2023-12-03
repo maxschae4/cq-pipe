@@ -103,7 +103,7 @@ starts underlying containerized services
 
 ```sh
 cd $(git rev-parse --show-toplevel)
-podman compose up --detach
+podman compose up --detach --no-recreate
 ```
 
 ### start
@@ -134,4 +134,18 @@ executes python unittests
 ```sh
 cd $(git rev-parse --show-toplevel)
 poetry run python3 -m unittest
+```
+
+### run
+
+runs the extract tasks to populate the database
+
+requires: service-start
+
+```py
+#!/usr/bin/env python
+from cq_pipe.tasks import extract_crowdstrike_hosts, extract_qualys_hosts
+
+extract_crowdstrike_hosts.delay()
+extract_qualys_hosts.delay()
 ```
