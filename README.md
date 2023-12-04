@@ -21,9 +21,6 @@ Apple indicates these are considered sensitive information.
 
 docker/podman or configured and running rabbitmq/mongodb services
 
-n.b. celery expects to be able to connect to rabbitmq without configuration,
-this is not truly production-ready
-
 ### Without going deep into the development workflow
 
 
