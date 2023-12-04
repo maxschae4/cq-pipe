@@ -1,10 +1,97 @@
 # cq-pipe
 
-A python example project demonstrating a deduplication pipeline utilizing celery, pydantic, and mongodb
+A python example project demonstrating a deduplication pipeline utilizing celery, pydantic, and mongodb.
+
+I've gone fairly deep in this project to explore a few ideas I've had kicking around.
+Mostly involving trying to improve the development workflow in a complex environment.
+
+I've been running celery in production for years, so taking that approach was a natural fit.
+Batch processing definitely might not be the right approach once we hit millions of records.
+And I'd bet that before-hand, we'd need to instrument API rate-limit handling among many other things.
+I've also dropped the vast majority of the source data from the provided APIs to focus on the core principal of deduplication.
+
+As a sidenote, I've obscured what might be a real Apple Serial number in the data.
+Apple indicates these are considered sensitive information.
+
+![image of deduplicated hosts from mongo express](/deduplicated_hosts.png?raw=true "Optional Title")
+
+## Quickstart
+
+### Prerequisites
+
+docker/podman or configured and running rabbitmq/mongodb services
+
+n.b. celery expects to be able to connect to rabbitmq without configuration,
+this is not truly production-ready
+
+### Without going deep into the development workflow
+
+
+```sh
+# start all services, celery may complain until rabbitmq is up
+pip install --user poetry
+poetry install
+cp .env.sample .env
+```
+
+**configure your `.env` file!**
+
+```sh
+podman-compose up --detach
+# source environment variable file
+set -o allexport
+source .env
+set +o allexport
+# run the celery worker if you're not using the docker-composed services
+poetry run celery --app "cq_pipe" worker --loglevel INFO
+poetry run python3
+```
+
+start the extraction manually
+
+```py
+from cq_pipe.tasks import extract_crowdstrike_hosts, extract_qualys_hosts
+
+extract_crowdstrike_hosts.delay()
+extract_qualys_hosts.delay()
+```
+
+Now you can connect to mongodb and see your results!
+
+### using the development toolbox
+
+**configure**
+
+```sh
+cd toolbox
+make toolbox
+make enter
+cd $(git rev-parse --show-toplevel)
+xc init
+```
+
+**configure your `.env` file!**
+
+```sh
+direnv reload
+xc service-start
+xc ipy
+```
+
+start the extraction manually
+
+```py
+from cq_pipe.tasks import extract_crowdstrike_hosts, extract_qualys_hosts
+
+extract_crowdstrike_hosts.delay()
+extract_qualys_hosts.delay()
+```
+
+Now you can connect to mongodb and see your results!
 
 ## Development
 
-### Prerequisites
+### Development-Prerequisites
 
 While I attempt to provide all the tooling within a container, this requires a baseline installation and configuration of podman and distrobox.
 See [the toolbox README](./toolbox/README.md) for additional instructions.
@@ -77,22 +164,8 @@ cd $(git rev-parse --show-toplevel)
 # configure the shared githook path
 git config core.hooksPath .githooks
 # write a default env file
-tee .env <<EOF
-# python app requirements, change these
-API_TOKEN="abcd1234"
-API_URL="https://example.com/api"
-CROWDSTRIKE_ENDPOINT="crowdstrike/hosts/get"
-QUALYS_ENDPOINT="qualys/hosts/get"
-
-# use the service defaults, change these
-RABBITMQ_DEFUALT_USER="guest"
-RABBITMQ_DEFAULT_PASS="guest"
-MONGO_INITDB_ROOT_USERNAME="root"
-MONGO_INITDB_ROOT_PASSWORD="example"
-ME_CONFIG_MONGODB_ADMINUSERNAME="root"
-ME_CONFIG_MONGODB_ADMINPASSWORD="example"
-ME_CONFIG_MONGODB_URL="mongodb://root:example@mongo:27017/"
-EOF
+cp .env.sample .env
+direnv allow
 # setup the virtual environment
 poetry install --dev
 ```
