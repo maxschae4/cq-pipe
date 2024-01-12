@@ -52,3 +52,21 @@ class TestHostFromQualys(unittest.TestCase):
             kind_id="i-0f74daf3d7225083a",
         )
         self.assertEqual(test_host, expected_host)
+
+
+class TestHostFromTenable(unittest.TestCase):
+    def setUp(self):
+        with open("tests/tenable_aws_host.json", "r") as aws_host:
+            self.aws_host = json.load(aws_host)
+
+    def test_aws_host_from_tenable(self):
+        """
+        Regression test against expected results of marshaling an AWS Host.
+        """
+        test_host = Host.from_tenable(self.aws_host)
+        expected_host = Host(
+            tenable_device_id="9a7ba8fef975467a9af657f03c2220b8",
+            kind="AWS",
+            kind_id="i-00243621465aa8bd0",
+        )
+        self.assertEqual(test_host, expected_host)

@@ -30,6 +30,7 @@ class Host(BaseModel):
     crowdstrike_device_id: str = Field(unique=True, default=None)
     # appears to be an int
     qualys_device_id: int = Field(unique=True, default=None)
+    tenable_device_id: str = Field(unique=True, default=None)
     # cloud provider, system type, etc
     kind: str
     # unique identifier for the kind, could be a union type (harder to reason about)
@@ -88,3 +89,23 @@ class Host(BaseModel):
                 raise UnknownHostKindError(f"Unknown host kind: {host}")
 
         return cls(kind=kind, kind_id=kind_id, qualys_device_id=host["id"])
+
+    @classmethod
+    def from_tenable(cls, host: dict) -> Host:
+        """
+        convert tenable
+        """
+        match host["system_type"]:
+            case "aws-ec2-instance":
+                kind = "AWS"
+                # the following is extremely brittle.
+                # we could chain .get() to improve the sanity of the lookup,
+                # but without an instance id, we still end up without success
+                kind_id = host["aws_ec2_instance_id"]
+            # explicitly raise an error if we find an unknown type
+            # a better system might create "unknown" types
+            # those could be deduped later without data loss
+            case _:
+                raise UnknownHostKindError(f"Unknown host kind: {host}")
+
+        return cls(kind=kind, kind_id=kind_id, tenable_device_id=host["tenable_id"])

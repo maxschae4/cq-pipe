@@ -3,7 +3,7 @@ import os
 from pymongo import MongoClient
 
 from cq_pipe.celery import app
-from cq_pipe.extract import fetch_hosts
+from cq_pipe.extract import fetch_hosts, fetch_tenable_hosts
 from cq_pipe.load import load
 from cq_pipe.transform import Host
 
@@ -14,6 +14,7 @@ API_URL = os.getenv("API_URL", "")
 CROWDSTRIKE_ENDPOINT = os.getenv("CROWDSTRIKE_ENDPOINT", "")
 MONGO_DB_URL = os.getenv("MONGO_DB_URL")
 QUALYS_ENDPOINT = os.getenv("QUALYS_ENDPOINT", "")
+TENABLE_ENDPOINT = os.getenv("TENABLE_ENDPOINT", "")
 
 
 @app.task
@@ -52,6 +53,21 @@ def extract_qualys_hosts() -> None:
 
 
 @app.task
+def extract_tenable_hosts() -> None:
+    """
+    Control loop for fetching all hosts from a tenable endpoint and generating tasks
+
+    Defined as a celery task so we can leverage celery beat to schedule execution
+    """
+    endpoint = f"{API_URL}/{TENABLE_ENDPOINT}"
+    # the API uses cursor-based paging, expecting None for the first request
+    for page in fetch_tenable_hosts(endpoint, API_TOKEN, cursor=None):
+        for host in page:
+            chain = transform_tenable_host.s(host) | load_host.s()
+            chain()
+
+
+@app.task
 def transform_crowdstrike_host(host: dict) -> dict:
     """
     Transform the crowdstrike host into our defined model
@@ -70,6 +86,15 @@ def transform_qualys_host(host: dict) -> dict:
     """
     modeled_host = Host.from_qualys(host)
     # model dump enables dropping the unset values
+    return modeled_host.model_dump(exclude_unset=True)
+
+
+@app.task
+def transform_tenable_host(host: dict) -> dict:
+    """
+    Transform the tenable host into our defined model
+    """
+    modeled_host = Host.from_tenable(host)
     return modeled_host.model_dump(exclude_unset=True)
 
 

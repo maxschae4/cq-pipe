@@ -75,3 +75,44 @@ def fetch_hosts(
         skip += limit
 
     return
+
+
+def fetch_cursor_host_page(
+    session: requests.Session,
+    endpoint: str,
+    cursor: str | None,
+) -> dict | None:
+    """
+    fetch_host_page does the hard work of retrieving a page of results from the api
+    """
+    result = session.post(endpoint, params={"cursor": cursor}, data="")
+    result.raise_for_status()
+
+    result_json = result.json()
+    # successfully reaching the end means we have an empty hosts array
+    if len(result_json["hosts"]) == 0:
+        return None
+
+    # it might be useful to do some introspection on the result before returning the contents blindly
+    # this could be a good next step for improving sanity in the system
+    return result_json
+
+
+def fetch_tenable_hosts(
+    endpoint: str,
+    api_token: str,
+    cursor: str | None,
+) -> Generator[list[dict], None, None]:
+    """
+    fetch_tenable_hosts is a generator that implements a cursor-based pagination
+    for retrieving hosts from a tenable api.
+    """
+    session = requests.sessions.Session()
+    session.auth = TokenAuth(api_token)
+    while (
+        result := fetch_cursor_host_page(session, endpoint, cursor=cursor)
+    ) is not None:
+        yield result["hosts"]
+        cursor = result["cursor"]
+
+    return
